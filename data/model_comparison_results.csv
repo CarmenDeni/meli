@@ -1,0 +1,4 @@
+MSE,RMSE,MAE,R2,Model,Best_Params
+100.3281875996604,10.016395938642821,5.843395209996474,0.43549731676171055,Random Forest,"{'model__max_depth': 30, 'model__min_samples_split': 10, 'model__n_estimators': 100}"
+98.15601489860046,9.907371745251131,6.20125632117801,0.4477191793064442,XGBoost,"{'model__learning_rate': 0.2, 'model__max_depth': 3, 'model__n_estimators': 300}"
+120.69672403399458,10.986206080080356,6.90660339795277,0.32089250084796805,LightGBM,"{'model__learning_rate': 0.1, 'model__n_estimators': 100, 'model__num_leaves': 31}"
