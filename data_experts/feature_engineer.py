@@ -12,6 +12,7 @@ class FeatureEngineer(DataPipeline):
     Clase para realizar el feature engineering a los datos limpios.
     
     Métodos:
+    - add_sold_quantity(): Añade la columna de items vendidos: la extrae de initial_quantity - available_quantity.
     - add_discount_feature(): Añade una columna de descuento calculado.
     - add_days_until_discount_end(): Añade una columna de días restantes para el fin del descuento.
     - add_timestamp(): Añade una columna con el timestamp actual.
@@ -25,6 +26,17 @@ class FeatureEngineer(DataPipeline):
     - apply_all_features(): Aplica todas las funciones de feature engineering en una sola llamada.
     """
 
+    def add_sold_quantity(self) -> pd.DataFrame:
+        """
+        Añade una columna con la cantidad vendida de un producto.
+
+        Returns:
+            pd.DataFrame: DataFrame con la nueva columna 'sold_quantity'.
+        """
+        self.dataframe['sold_quantity'] = self.dataframe['initial_quantity'] - self.dataframe['available_quantity'] 
+        return self.dataframe
+
+    
     def add_discount_feature(self) -> pd.DataFrame:
         """
         Añade una columna al DataFrame con el porcentaje de descuento calculado.
@@ -201,6 +213,7 @@ class FeatureEngineer(DataPipeline):
         self.add_domain_id()
         self.add_available_quantity()
         self.add_listing_type()
+        self.add_sold_quantity()
         self.add_installment_features()
         return self.dataframe
 

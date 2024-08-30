@@ -71,6 +71,54 @@ class DataPipeline:
         df['query'] = query  # Añadir la columna 'query'
         return df
 
+    def extract_seller_id(self) -> pd.DataFrame:
+        """
+        Extrae el 'seller_id' del atributo 'seller' y lo añade como una columna al DataFrame.
+
+        Returns:
+            pd.DataFrame: DataFrame con la nueva columna 'seller_id'.
+        """
+        self.dataframe['seller_id'] = self.dataframe['seller'].apply(lambda x: x.get('id'))
+        return self.dataframe
+
+    def fetch_additional_features(self) -> pd.DataFrame:
+        """
+        Realiza solicitudes adicionales a la API de Mercado Libre para extraer más features por cada 'id'.
+
+        Returns:
+            pd.DataFrame: DataFrame con las columnas 'id', 'initial_quantity' y 'seller_id'.
+        """
+        additional_data = []
+        for item_id in self.dataframe['id']:
+            url = f"https://api.mercadolibre.com/items/{item_id}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                item_data = response.json()
+                additional_data.append({
+                    'id': item_id,
+                    'initial_quantity': item_data.get('initial_quantity'),
+                    'seller_id': item_data.get('seller_id')
+                })
+            else:
+                print(f"Error fetching additional data for item ID: {item_id}")
+
+        additional_df = pd.DataFrame(additional_data)
+        return additional_df
+
+    def join_datasets(self, additional_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Realiza el join del DataFrame principal con el DataFrame de datos adicionales por 'id' y 'seller_id'.
+
+        Args:
+            additional_df (pd.DataFrame): DataFrame que contiene 'id', 'initial_quantity' y 'seller_id'.
+
+        Returns:
+            pd.DataFrame: DataFrame resultante después del join.
+        """
+        combined_df = pd.merge(self.dataframe, additional_df, on=['id', 'seller_id'], how='left')
+        combined_df.drop_duplicates(subset=['id', 'seller_id'], inplace=True)
+        return combined_df
+
     def process_data(self) -> pd.DataFrame:
         """
         Realiza la obtención, limpieza y combinación de datos de todas las consultas.
@@ -87,16 +135,18 @@ class DataPipeline:
 
         # Combinar todos los DataFrames en uno solo y quitar los items que salen repetidos en búsquedas de múltiples queries
         self.dataframe = pd.concat(combined_data, ignore_index=True)
-        self.dataframe.drop_duplicates(subset=["catalog_product_id", "official_store_id"], inplace=True)
         return self.dataframe
 
     def clean_and_prepare(self) -> pd.DataFrame:
         """
-        Limpia y prepara los datos llamando al método `process_data` y devuelve los datos limpios.
+        Limpia y prepara los datos llamando al método `process_data`, extrae el 'seller_id' y realiza el join con los datos adicionales.
 
         Returns:
-            pd.DataFrame: DataFrame con los datos limpios.
+            pd.DataFrame: DataFrame con los datos limpios y preparados.
         """
-        cleaned_df = self.process_data()
-        print("Data cleaned successfully")
-        return cleaned_df
+        self.process_data()
+        self.extract_seller_id()
+        additional_df = self.fetch_additional_features()
+        final_df = self.join_datasets(additional_df)
+        print("Data cleaned and prepared successfully")
+        return final_df

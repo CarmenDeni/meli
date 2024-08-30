@@ -41,7 +41,7 @@ class Analyst:
         else:
             return self.dataframe.describe(include='all')
 
-    def analyze_by_features(self, features: List[str], metric: str = "mean") -> pd.DataFrame:
+    def analyze_by_features(self, features: List[str], metric: str = "mean", col = "discount") -> pd.DataFrame:
         """
         Agrupa los datos por uno o más features categóricos y calcula la medida de tendencia central especificada para discount.
 
@@ -49,6 +49,7 @@ class Analyst:
             features (list): Lista de nombres de columnas por las cuales agrupar los datos.
             metric (str): La métrica de tendencia central a calcular. Opciones: 'mean', 'median', 'mode'.
                           Por defecto es 'mean'.
+            col (str): La columna cuyo valor agregaremos
 
         Returns:
             pd.DataFrame: DataFrame con los valores agrupados y su métrica calculada.
@@ -56,15 +57,16 @@ class Analyst:
         metrics_map = {
             "mean": "mean",
             "median": "median",
+            "count" : "count",
             "mode": lambda x: x.mode().iloc[0] if not x.mode().empty else float('nan')
         }
 
         if metric not in metrics_map:
-            raise ValueError(f"Métrica '{metric}' no soportada. Use 'mean', 'median', o 'mode'.")
+            raise ValueError(f"Métrica '{metric}' no soportada. Use 'mean', 'median', 'count' o 'mode'.")
 
         missing_features = [feature for feature in features if feature not in self.dataframe.columns]
         if missing_features:
             raise ValueError(f"Las siguientes columnas no existen en el DataFrame: {', '.join(missing_features)}")
 
-        group = self.dataframe.groupby(features).agg({'discount': metrics_map[metric]})
+        group = self.dataframe.groupby(features).agg({col: metrics_map[metric]})
         return group
